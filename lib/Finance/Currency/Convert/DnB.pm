@@ -4,7 +4,7 @@ use warnings;
 use Exporter;
 our @ISA = qw/Exporter/;
 our @EXPORT = qw/currency update_currency currencies/;
-our $VERSION = '0.1';
+our $VERSION = '0.2';
 
 our $currency;
 use File::Spec;
@@ -13,11 +13,11 @@ use LWP::Simple;
 use Slurp;
 
 sub update_currency {
-    my $filename = File::Spec->tmpdir() . "/currency_list_" . (($>) ? $> : "") . ".xml";
+    my $filename = File::Spec->tmpdir() . "/currency_list_" . ((defined $>) ? $> : "") . ".xml";
     #only download XML twice a day
     if (!-e $filename || time()-43200 < -M $filename || $_[0]) {
-        getstore('http://www.dnbnor.no/seg-markets/portalfront/datafiles/miscellaneous/csv/kursliste_ws.xml', $filename)
-	    or die 'Failed to get list of currencies';
+        is_success ($_=getstore('http://www.dnbnor.no/portalfront/datafiles/miscellaneous/csv/kursliste_ws.xml', $filename))
+	    or die 'Failed to get list of currencies; http error code: ' . $_;
 
     }
 
@@ -42,7 +42,7 @@ sub currency {
 	
 	foreach my $amount ( (ref($amount) eq 'ARRAY') ? @$amount : $amount ) {
 	    if ($_ eq "NOK") {
-		$res += $_ * $from_currency;
+		$res += $amount * $from_currency;
 	    }
 	    elsif ($from eq "NOK") {
 		$res += $amount / $to_currency;
